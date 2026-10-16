@@ -77,7 +77,6 @@ The server keeps the key on your machine and generates offers live. The same pag
 | `pipeline.py` | Picks the customers to write to and writes the offers with Qwen3.8-27B |
 | `export_demo.py` | Exports the dashboard data (`demo/data.json`) |
 | `jev_risk.py`, `jev_batch.py`, `jev_offers.py` | Early baseline with Jev (OpenRouter), not part of the final product |
-| `build_kev_data.py` | Training data prepared for a possible fine-tune, not used in the final product |
 | `llm.py` | Small OpenAI-compatible LLM client |
 
 ## Team
