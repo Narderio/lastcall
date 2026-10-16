@@ -4,6 +4,8 @@ AMD Developer Hackathon ACT III · Track 3, Reinvent Commerce.
 
 LastCall finds the customers of an online shop who are about to stop buying and writes a personal retention offer for each of them. The shop owner reviews every offer before anything goes out.
 
+**Live demo:** <https://narderio.github.io/lastcall/> (the 200 offers are already written; live generation needs the local server, see [Run it](#run-it)).
+
 ## How it works
 
 1. **Who is leaving.** A Random Forest scores every active customer from 0 to 100 using their purchase history (20 features, such as days since the last order compared with their usual rhythm).
@@ -60,7 +62,7 @@ Start the dashboard from the repository root and open <http://localhost:8766>:
 python demo/server.py
 ```
 
-The server keeps the key on your machine and generates offers live. The pages alone (`demo/index.html`) also work as a static site with the 200 offers already written; only the live generation button needs the server.
+The server keeps the key on your machine and generates offers live. The same pages are published as a static site on GitHub Pages (`.github/workflows/pages.yml`) with the 200 offers already written; only the live generation button needs the server.
 
 ## Scripts (`churn/`)
 
