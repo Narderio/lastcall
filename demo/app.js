@@ -21,7 +21,7 @@
 
   const ui = { offer: "all", status: "review", query: "", selected: new Set() };
   // Pagina Customers: filtro principale (attivi / a rischio) e sottofiltri del rischio
-  const CUI_DEFAULT = { main: "active", level: "all", delay: "any", aov: "any", orders: "any", cancel: "any", spend: "any", season: "any", q: "", sort: "risk", limit: 60 };
+  const CUI_DEFAULT = { main: "active", level: "all", delay: "any", aov: "any", orders: "any", cancel: "any", spend: "any", season: "any", q: "", sort: "risk", limit: 60, open: null };
   const cui = { ...CUI_DEFAULT };
   const AT_RISK = 50; // come nella selezione delle offerte: rischio sopra 50
 
@@ -209,14 +209,11 @@
   function offers() {
     const n = counts();
     const list = filtered();
-    const statusCard = (key, extra) => {
-      const active = ui.status === key;
-      return `<button type="button" class="${active ? "tile accent" : "card tile"}" data-status="${key}" aria-pressed="${active}" style="border:0;text-align:left;cursor:pointer;${active ? "" : "border-radius:22px"}">
-        <span class="label">${STATUS[key].label}</span>
-        <span class="big num">${fmt(n[key])}</span>
-        <span class="chip ${active ? "on-accent" : extra}">${{ review: "waiting for you", approved: "ready to send", edited: "changed by you", rejected: "no offer" }[key]}</span>
+    const hints = { review: "waiting for you", approved: "ready to send", edited: "changed by you", rejected: "no offer" };
+    const seg = (key) => `
+      <button type="button" class="seg-btn${key === "review" ? " risk" : ""}" data-status="${key}" aria-pressed="${ui.status === key}" title="${hints[key]}">
+        <span>${STATUS[key].label}</span><strong class="num">${fmt(n[key])}</strong>
       </button>`;
-    };
     return `
       <div class="head-row">
         <div>
@@ -229,19 +226,19 @@
         </div>
       </div>
 
-      <section class="grid-12" aria-label="Status">
-        <div class="span-3">${statusCard("review", "blue")}</div>
-        <div class="span-3">${statusCard("approved", "good")}</div>
-        <div class="span-3">${statusCard("edited", "violet")}</div>
-        <div class="span-3">${statusCard("rejected", "grey")}</div>
+      <section class="filter-bar card" aria-label="Offer filters">
+        <div class="seg four" role="group" aria-label="Status">
+          ${["review", "approved", "edited", "rejected"].map(seg).join("")}
+        </div>
+        <div class="chips" role="group" aria-label="Offer type">
+          ${[["all", "All"], ...Object.entries(OFFER_LABEL)].map(([k, l]) =>
+            `<button type="button" class="chip-f${ui.offer === k ? " on" : ""}" data-offer="${k}" aria-pressed="${ui.offer === k}">${l}</button>`).join("")}
+        </div>
       </section>
 
       <section class="card stack">
         <div class="row spread">
-          <div class="row" style="gap:6px" role="group" aria-label="Offer type">
-            ${[["all", "All"], ...Object.entries(OFFER_LABEL)].map(([k, l]) =>
-              `<button type="button" class="btn ${ui.offer === k ? "dark" : "light"}" data-offer="${k}" aria-pressed="${ui.offer === k}">${l}</button>`).join("")}
-          </div>
+          <h2>${fmt(list.length)} offers</h2>
           <div class="row">
             <label class="search">
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -404,23 +401,31 @@
     const atRisk = all.filter((c) => c.risk > AT_RISK).length;
     const list = pool();
     const shown = list.slice(0, cui.limit);
-    const mainBtn = (key, label, n, help) => `
-      <button type="button" class="${cui.main === key ? "tile accent" : "card tile"}" data-cmain="${key}" aria-pressed="${cui.main === key}" style="border:0;text-align:left;cursor:pointer;min-height:110px" ${tip(help)}>
-        <span class="label">${label}</span><span class="big num">${fmt(n)}</span>
+    const seg = (key, label, n, help) => `
+      <button type="button" class="seg-btn${key === "risk" ? " risk" : ""}" data-cmain="${key}" aria-pressed="${cui.main === key}" ${tip(help)}>
+        <span>${label}</span><strong class="num">${fmt(n)}</strong>
       </button>`;
-    const sub = cui.main === "risk" ? `
-      <section class="card stack" aria-label="Risk filters">
-        <div class="row spread"><h2>Filter customers at risk</h2><button type="button" class="btn light" data-creset>Clear filters</button></div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px">
-          ${SUBFILTERS.map((f) => `
-            <div class="stack" style="gap:6px" role="group" aria-label="${esc(f.label)}">
-              <span class="label" style="font-weight:600" ${tip(f.tip)}>${esc(f.label)} ⓘ</span>
-              <div class="row" style="gap:6px">
-                ${f.options.map(([v, l]) => `<button type="button" class="btn ${cui[f.key] === v ? "dark" : "light"}" style="min-height:34px;padding:0 12px;font-size:13px" data-cf="${f.key}" data-cv="${v}" aria-pressed="${cui[f.key] === v}">${l}</button>`).join("")}
-              </div>
-            </div>`).join("")}
+    const isOn = (f) => cui[f.key] !== f.options[0][0];
+    const activeCount = SUBFILTERS.filter(isOn).length;
+    const openF = SUBFILTERS.find((f) => f.key === cui.open);
+    const chips = cui.main === "risk" ? `
+      <div class="chips" role="group" aria-label="Risk filters">
+        ${SUBFILTERS.map((f) => {
+          const on = isOn(f);
+          const val = on ? (f.options.find(([v]) => v === cui[f.key]) || [])[1] : "";
+          return `<button type="button" class="chip-f${on ? " on" : ""}" ${on ? `data-cf="${f.key}" data-cv="${f.options[0][0]}" aria-label="Remove filter ${esc(f.label)}"` : `data-copen="${f.key}" aria-expanded="${cui.open === f.key}"`} ${tip(f.tip)}>${esc(f.label)}${on ? `: ${esc(val)} <span aria-hidden="true">×</span>` : ` <span aria-hidden="true">▾</span>`}</button>`;
+        }).join("")}
+        ${activeCount ? `<button type="button" class="chip-clear" data-creset>Clear all</button>` : ""}
+      </div>
+      ${openF ? `<div class="chip-menu" role="group" aria-label="${esc(openF.label)}">${openF.options.slice(1).map(([v, l]) => `<button type="button" data-cf="${openF.key}" data-cv="${v}">${esc(l)}</button>`).join("")}</div>` : ""}` : `<p class="bar-hint">Pick “Customers at risk” to filter by risk level, rhythm, spend and more.</p>`;
+    const filterBar = `
+      <section class="filter-bar card" aria-label="Customer filters">
+        <div class="seg" role="group" aria-label="Customer group">
+          ${seg("active", "Active customers", all.length, "Customers who bought in the last 12 months and don't have an offer yet.")}
+          ${seg("risk", "Customers at risk", atRisk, "Active customers with a risk score above 50: more likely than not to stop buying.")}
         </div>
-      </section>` : "";
+        ${chips}
+      </section>`;
     return `
       <div class="head-row">
         <div>
@@ -429,11 +434,7 @@
         </div>
       </div>
 
-      <section class="grid-12" aria-label="Customer groups">
-        <div class="span-6">${mainBtn("active", "Active customers", all.length, "Customers who bought in the last 12 months and don't have an offer yet.")}</div>
-        <div class="span-6">${mainBtn("risk", "Customers at risk", atRisk, "Active customers with a risk score above 50: more likely than not to stop buying.")}</div>
-      </section>
-      ${sub}
+      ${filterBar}
 
       <section class="card stack">
         <div class="row spread">
@@ -662,8 +663,9 @@
     if (d.open) openDetail(d.open);
     else if (d.pool) openPool(d.pool);
     else if (d.generate) generateOffer(d.generate);
-    else if (d.cmain) { cui.main = d.cmain; cui.limit = CUI_DEFAULT.limit; render(); }
-    else if (d.cf) { cui[d.cf] = d.cv; cui.limit = CUI_DEFAULT.limit; render(); }
+    else if (d.cmain) { cui.main = d.cmain; cui.open = null; cui.limit = CUI_DEFAULT.limit; render(); }
+    else if (d.copen) { cui.open = cui.open === d.copen ? null : d.copen; render(); }
+    else if (d.cf) { cui[d.cf] = d.cv; cui.open = null; cui.limit = CUI_DEFAULT.limit; render(); }
     else if (d.creset !== undefined) { Object.assign(cui, CUI_DEFAULT, { main: "risk", q: cui.q, sort: cui.sort }); render(); }
     else if (d.cmore !== undefined) { cui.limit += 60; render(); }
     else if (d.close !== undefined) closeDetail();

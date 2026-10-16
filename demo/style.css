@@ -175,6 +175,28 @@ button.link:hover { color: var(--accent-text); }
   background: var(--black); color: #FFFFFF; padding: 12px 18px; border-radius: 999px; font-weight: 600;
 }
 
+/* Barra filtri Customers */
+.filter-bar { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+.seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: var(--soft); border-radius: 18px; padding: 4px; }
+.seg.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.seg-btn { border: 0; background: transparent; border-radius: 14px; padding: 14px 18px; cursor: pointer; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; min-width: 0; font-weight: 600; color: var(--ink-2); text-align: left; transition: background .2s, color .2s; }
+.seg-btn strong { font-size: 28px; letter-spacing: -0.02em; }
+.seg-btn[aria-pressed="true"] { background: var(--black); color: #FFFFFF; }
+.seg-btn[aria-pressed="true"].risk { background: var(--accent); color: var(--accent-ink); }
+.seg-btn:not([aria-pressed="true"]):hover { background: #ECECEF; }
+.seg-btn:focus-visible, .chip-f:focus-visible, .chip-menu button:focus-visible, .chip-clear:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 4px; }
+.chip-f { border: 1px solid #E4E4E7; background: var(--card); color: var(--ink); border-radius: 999px; padding: 7px 13px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.chip-f[aria-expanded="true"] { border-color: var(--black); }
+.chip-f.on { background: var(--black); color: #FFFFFF; border-color: var(--black); }
+.chip-clear { border: 0; background: none; color: var(--accent-text); font-weight: 600; font-size: 13px; cursor: pointer; padding: 7px 6px; }
+.chip-menu { display: flex; flex-wrap: wrap; gap: 6px; background: var(--soft); border-radius: 14px; padding: 10px; margin: 0 4px; }
+.chip-menu button { border: 0; background: var(--card); color: var(--ink); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.chip-menu button:hover { background: var(--accent-soft); }
+.bar-hint { margin: 0; padding: 0 6px 4px; color: var(--muted); font-size: 13px; }
+@media (max-width: 900px) { .seg.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } .seg-btn strong { font-size: 22px; } }
+@media (prefers-reduced-motion: reduce) { .seg-btn { transition: none; } }
+
 @media (max-width: 900px) {
   .shell { padding: 12px; }
   .panel { padding: 16px; border-radius: 24px; }
