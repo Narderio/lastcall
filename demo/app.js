@@ -563,7 +563,7 @@
       const offline = String(e.message) === "offline" || e instanceof TypeError;
       dialog.innerHTML = `<div class="detail-body">${poolDetail(id)}</div>`;
       const area = document.getElementById("gen-area");
-      if (area) area.insertAdjacentHTML("beforeend", `<span class="sub" style="color:var(--danger);max-width:320px">${offline ? "AI generation needs the local server: run <code>python demo/server.py</code>." : "The AI could not write the offer: " + esc(e.message)}</span>`);
+      if (area) area.insertAdjacentHTML("beforeend", `<span class="sub" style="color:var(--danger);max-width:320px">${offline ? "Live generation runs on the local server, not in this online demo. The 200 offers shown here are already written; to try it live run <code>python demo/server.py</code>." : "The AI could not write the offer: " + esc(e.message)}</span>`);
     }
   }
 
