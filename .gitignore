@@ -15,3 +15,7 @@ catboost_info/
 
 # Internal notes
 TODO.md
+
+# Session handoff
+HANDOFF.md
+.handoffs/

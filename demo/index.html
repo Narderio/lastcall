@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LastCall</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="shell">
+  <div class="panel">
+    <header class="topbar">
+      <a class="brand" href="#/overview"><span class="brand-mark" aria-hidden="true">L</span>LastCall</a>
+      <nav class="tabs" aria-label="Sections">
+        <a href="#/overview" data-route="overview">Overview</a>
+        <a href="#/offers" data-route="offers">Offers</a>
+        <a href="#/customers" data-route="customers">Customers</a>
+        <a href="#/how" data-route="how">How it works</a>
+      </nav>
+      <div class="profile">
+        <span class="avatar" aria-hidden="true">SO</span>
+        <span><strong>Shop owner</strong><br><small>UK wholesaler</small></span>
+      </div>
+    </header>
+
+    <div class="body">
+      <main id="app" aria-live="polite"></main>
+    </div>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
