@@ -77,7 +77,7 @@ def throttle():
         _last[0] = time.monotonic()
 
 
-def ask(state: dict, key: str, tries: int = 6) -> tuple[dict, dict]:
+def ask(state: dict, key: str, tries: int = 6, timeout: int = 300) -> tuple[dict, dict]:
     body = {"model": MODEL, "reasoning_effort": REASONING, "temperature": 0, "max_tokens": 3000,
             "response_format": {"type": "json_object"},
             "messages": [{"role": "system", "content": SYSTEM},
@@ -87,7 +87,7 @@ def ask(state: dict, key: str, tries: int = 6) -> tuple[dict, dict]:
         req = urllib.request.Request(BASE_URL + "/chat/completions", data=json.dumps(body).encode(),
                                      headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
         try:
-            with urllib.request.urlopen(req, timeout=300) as r:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
                 resp = json.load(r)
             text = resp["choices"][0]["message"]["content"] or ""
             text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
@@ -165,10 +165,10 @@ def valid(a: dict, product: str) -> bool:
     return coherent and mentions_product(msg, product)
 
 
-def ask_valid(state: dict, key: str, tries: int = 3) -> tuple[dict, dict, int]:
+def ask_valid(state: dict, key: str, tries: int = 3, **ask_kwargs) -> tuple[dict, dict, int]:
     """Richiede di nuovo se il messaggio non Ã¨ coerente o non cita il prodotto."""
     for n in range(1, tries + 1):
-        answer, usage = ask(state, key)
+        answer, usage = ask(state, key, **ask_kwargs)
         if valid(answer, state["most_bought_product"]):
             break
     return answer, usage, n

@@ -54,6 +54,24 @@
   function saveGenerated() {
     try { localStorage.setItem(GEN_KEY, JSON.stringify(generated)); } catch (e) { /* solo in memoria */ }
   }
+  function offerFromBody(p, body) {
+    return {
+      ...p, band: p.risk >= 70 ? "alto" : p.risk >= 40 ? "medio" : "basso",
+      net_spend: body.net_spend, orders: body.orders,
+      reason: body.reason, offer: body.offer, discount_pct: body.discount_pct,
+      explanation: body.explanation, message: body.message, checks_ok: body.checks_ok, generated: true,
+    };
+  }
+  // Offerte salvate dal server locale (anche quelle generate fuori dalla pagina)
+  if (DATA) {
+    try {
+      const r = await fetch("api/generated", { cache: "no-store" });
+      if (r.ok) for (const body of await r.json()) {
+        const p = DATA.pool.find((x) => x.id === body.id);
+        if (p && !generated[body.id]) generated[body.id] = offerFromBody(p, body);
+      }
+    } catch (e) { /* senza server locale restano solo quelle del browser */ }
+  }
   if (DATA) DATA.customers = DATA.customers.concat(Object.values(generated).filter((g) => !DATA.customers.some((c) => c.id === g.id)));
   const hasOffer = (id) => DATA.customers.some((c) => c.id === id);
 
@@ -480,7 +498,7 @@
     const aovChange = c.aov_change_pct == null ? "no comparison" : `${c.aov_change_pct > 0 ? "+" : ""}${c.aov_change_pct}% vs last year`;
     const level = c.risk >= 70 ? "high" : c.risk >= 40 ? "medium" : "low";
     const action = state === "loading"
-      ? `<button type="button" class="btn dark lg" disabled>Writing the offer…</button><span class="sub">This takes about 10–30 seconds.</span>`
+      ? `<button type="button" class="btn dark lg" disabled>Writing the offer…</button><span class="sub">This can take up to a couple of minutes, please keep this window open.</span>`
       : `<button type="button" class="btn dark lg" data-generate="${esc(c.id)}">✦ Generate offer with AI</button>`;
     return `
       <div class="head-row">
@@ -548,12 +566,7 @@
       const body = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(body.error || (r.status === 404 || r.status === 405 || r.status === 501 ? "offline" : "HTTP " + r.status));
       const p = DATA.pool.find((x) => x.id === id);
-      const offer = {
-        ...p, band: p.risk >= 70 ? "alto" : p.risk >= 40 ? "medio" : "basso",
-        net_spend: body.net_spend, orders: body.orders,
-        reason: body.reason, offer: body.offer, discount_pct: body.discount_pct,
-        explanation: body.explanation, message: body.message, checks_ok: body.checks_ok, generated: true,
-      };
+      const offer = offerFromBody(p, body);
       generated[id] = offer; saveGenerated();
       DATA.customers.push(offer);
       toast(`Offer for #${id} ready to review`);

@@ -6,6 +6,7 @@ Uso (dalla cartella AMD):  python demo/server.py   poi apri http://localhost:876
 """
 import json
 import sys
+import threading
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -22,10 +23,19 @@ KEY = pipeline.api_key()
 print(f"{len(CUSTOMERS)} clienti pronti. Apri http://localhost:{PORT}")
 
 
+SAVE_FILE = HERE.parent / "data" / "generated_offers.json"
+SAVE_LOCK = threading.Lock()
+SAVED = json.loads(SAVE_FILE.read_text(encoding="utf-8")) if SAVE_FILE.exists() else {}
+
+
 class Handler(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         if "/api/" in (args[0] if args else ""):
             super().log_message(fmt, *args)
+
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-store")  # in locale la pagina deve sempre usare l'ultima versione
+        super().end_headers()
 
     def send_json(self, code, payload):
         body = json.dumps(payload, ensure_ascii=False).encode()
@@ -38,6 +48,8 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/api/health":
             return self.send_json(200, {"ok": True, "model": pipeline.MODEL})
+        if self.path.startswith("/api/generated"):
+            return self.send_json(200, list(SAVED.values()))
         return super().do_GET()
 
     def do_POST(self):
@@ -53,11 +65,11 @@ class Handler(SimpleHTTPRequestHandler):
         row = CUSTOMERS.loc[cid].copy()
         row["customer_id"] = cid
         try:
-            answer, _, attempts = pipeline.ask_valid(pipeline.to_state(row), KEY)
+            answer, _, attempts = pipeline.ask_valid(pipeline.to_state(row), KEY, tries=2, timeout=240)
         except Exception as e:  # rete, limiti della chiave, risposta non valida
             return self.send_json(502, {"error": f"AI request failed: {e}"})
         valid = pipeline.valid(answer, pipeline.to_state(row)["most_bought_product"])
-        return self.send_json(200, {
+        result = {
             "id": cid,
             "reason": answer.get("reason"),
             "offer": answer.get("offer"),
@@ -68,7 +80,11 @@ class Handler(SimpleHTTPRequestHandler):
             "net_spend": round(float(row["net_spend"]), 2),
             "orders": int(row["n_orders"]),
             "attempts": attempts,
-        })
+        }
+        with SAVE_LOCK:  # le offerte restano sul PC: la pagina le ricarica anche se generate fuori dal browser
+            SAVED[cid] = result
+            SAVE_FILE.write_text(json.dumps(SAVED, ensure_ascii=False, indent=1), encoding="utf-8")
+        return self.send_json(200, result)
 
 
 if __name__ == "__main__":
